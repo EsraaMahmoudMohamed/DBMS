@@ -1,0 +1,826 @@
+#!/bin/bash
+
+ ######################################################################
+#--dropTable----------------------
+dropTable()
+      {
+meta="meta"
+echo "please enter table name:"
+read tablename
+echo "Drop table  ? (y/n)"
+    read confirm
+
+    if [ $confirm = "y" ]
+    then
+        if [ -f $tablename -a  -f $tablename$meta ] && rm $tablename && rm $tablename$meta
+        then
+            echo  "Dropped Success"
+            break
+        else
+            echo "Dropping Error"
+        fi
+  fi
+
+        }
+###############################################################################################
+ #---insert into table values ----------------------------------------------------------------
+insertRecord()
+{
+meta="meta"
+
+echo please enter table name:
+read tablename
+
+#cols=$(awk -F: '{print $0}' $tablename$meta)
+cols=$(awk -F: '{print $0}' $tablename$meta)
+echo "all columns is"
+echo ${cols[*]}
+
+
+echo ------------------------
+colnum=$(cat $tablename$meta|wc -l)
+echo -n "Columns number is:"
+echo  $colnum
+
+
+echo ------------------------
+
+record=""
+i=0
+
+for col in $cols 
+	do
+	colname=$(echo $col|cut -d: -f1)
+	coltype=$(echo $col|cut -d: -f2)
+	primary=$(echo $col|cut -d: -f3)
+	echo "$colname :"
+	read value
+	
+	
+
+	echo hahahahaha
+	echo $coltype
+	echo $colname
+	#echo "column is 888888888888888"
+	echo $col
+
+
+	if [ $coltype == "int" ]
+		then
+		echo "true is integer"
+		if echo $value | grep '[A-Za-z]' > /dev/null
+			then
+			echo sorry, the value you entered is incorrect	
+			break;		
+			else
+			record+=$value	
+			record+=:	
+		fi
+	#else
+	#record+=$value
+	fi
+
+	
+
+	if [ $coltype == "string" ]
+		then
+		echo "true is string"
+		if echo $value | grep '[0-9]' > /dev/null
+			then
+			echo sorry, the value you entered is incorrect	
+			break;		
+			else
+			record+=$value	
+			record+=:	
+		fi
+	#else
+	#record+=$value
+	fi
+
+
+
+
+
+
+
+	if [ -n $primary ]
+		then
+		echo "is primary"
+		if [ -z $value ]
+			then
+			echo sorry, you have to enter a value	
+			break;			
+		else
+			echo to put code of validate unique	
+
+
+			 echo "--------------------------------"
+
+			  while grep "$value" $tablename >/dev/null 
+			  do 
+
+			  echo sorry, you have to enter a  unique value	
+			  flagtoexit=true
+			  break;			
+			 
+			  done
+			  		 
+
+			echo "--------------------------------"				
+		fi
+	else
+	$primary=""
+	fi
+
+
+
+	((i=$i+1))
+echo "ooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+
+if [ flagtoexit ]
+then
+break;
+fi
+
+
+done 
+
+
+
+if [ $i -eq $colnum ]
+	then
+	echo $record >>  $tablename
+fi
+}
+
+########################################################################
+#----delete record -----------------------------------------
+
+deleteRecord()
+{
+cat /dev/null >t
+echo please enter table name:
+    read tablename
+
+   columnsNamesline=$(head -n1 $tablename) 
+
+
+    echo $columnsNamesline| awk -F: '{n=split($line,arr,":");  } END {for (i in arr) print arr[i]} '  >temp2
+
+
+      readarray  arrCols < temp2 
+ 
+    echo "please enter where condition column name:-"
+    read whereCol
+
+       echo "enter wherecol value :-"
+                 read new
+
+         #echo ${arrCols[*]}
+          i=1
+           
+	    for col in ${arrCols[*]}
+            do
+
+                 if [ $col = $whereCol ]
+                then
+                    whereColIndex=$i;
+		
+		echo the column of  whereCol index is;
+		echo $whereColIndex;
+
+                 while read  a
+                  do 
+              
+                 x=$(echo $a | cut -d: -f$whereColIndex )
+                
+                 if [ "$x" = "$new" ]
+                   then 
+                     echo $( echo $a |sed 'd') >>t 
+                     else 
+                     echo $a>>t
+                    
+                 fi
+               
+                   done < $tablename
+                 fi
+
+                 i=$((i+1))
+             done
+
+         cat t >$tablename
+}
+
+##############################################
+#---search for record where col= val ---------------------------------------
+search(){
+   echo please enter table name:
+    read tablename
+
+   columnsNamesline=$(head -n1 $tablename) 
+
+
+    echo $columnsNamesline| awk -F: '{n=split($line,arr,":");  } END {for (i in arr) print arr[i]} '  >temp2
+
+
+      readarray  arrCols < temp2 
+ 
+    echo "please enter where condition column name:-"
+    read whereCol
+
+       echo "enter wherecol value :-"
+                 read new
+
+         #echo ${arrCols[*]}
+          i=1
+           
+	    for col in ${arrCols[*]}
+            do
+
+                 if [ $col = $whereCol ]
+                then
+                    whereColIndex=$i;
+		
+		echo the column of  whereCol index is;
+		echo $whereColIndex;
+
+                 while read  a
+                  do 
+              
+                 x=$(echo $a | cut -d: -f$whereColIndex )
+                
+                 if [ "$x" = "$new" ]
+                   then 
+                     echo $a
+                 fi
+               
+                   done < $tablename
+                 fi
+
+                 i=$((i+1))
+             done
+}
+
+########################################3
+#-------display table-----------------------------------
+displayTable(){
+ 
+echo "please enter table name to display it "
+read tablename
+if [ -e $tablename ]
+then
+cat $tablename 
+else
+echo "table not fond "
+fi
+  }
+
+
+##############################
+#-----update table set col=val where col=val-------------------------------------------------
+updateRecord(){
+cat /dev/null >te
+echo please enter table name:
+read tablename
+
+columnsNamesline=$(head -n1 $tablename) 
+
+
+echo $columnsNamesline| awk -F: '{n=split($line,arr,":");  } END {for (i in arr) print arr[i]} '  >temp2
+
+
+readarray  arrCols < temp2 
+ 
+echo please enter update column name:
+read updateCol
+echo please enter where column name:
+read whereCol
+echo "enter newvalue"
+                 read new
+
+echo "enter wherevalue"
+                 read where
+	
+echo hello all
+echo ${arrCols[*]}
+     i=1
+           
+	    for col in ${arrCols[*]}
+            do
+
+                 if [ $col = $whereCol ]
+                then
+                   whereIndex=$i;
+		
+		echo the column of update index is;
+		echo $whereIndex;
+                fi
+
+                i=$((i+1))
+            done
+
+
+           ii=1
+           
+	    for col in ${arrCols[*]}
+            do
+
+                 if [ $col = $updateCol ]
+                then
+                   updateIndex=$ii;
+		
+		echo the column of update index is;
+		echo $updateIndex;
+                fi
+
+                ii=$((ii+1))
+            done
+
+
+          while read  a
+                  do 
+          
+               
+                     x=$(echo $a | cut -d: -f$whereIndex )
+echo $x
+                       if [ "$x" == "$where" ]
+                     
+                        then
+                        xx=`echo $a | cut -d: -f$updateIndex` 
+echo "$xx"  
+                        echo "${a//$xx/$new}" >> te
+echo "${a//$xx/$new}"
+                        else 
+echo $a
+                        echo $a >> te
+                           fi
+                      done < $tablename
+
+    cat te >$tablename
+
+}
+
+#####################################################
+#-----turncate table -------------------------------------------------
+
+truncateTable(){
+echo "please enter table name you want to truncate it "
+ read tablename
+#line=` head -n1 $tablename `
+#echo $line
+echo "turncate table  ? (y/n)"
+    read confirm
+
+    if [ $confirm = "y" ]
+    then
+if [ -f $tablename ]
+then
+
+
+ sed -n 'd' $tablename > $tablename
+#echo $line >>$tablename
+fi
+fi
+}
+
+#################################################3
+#-----alter table-------------------------------
+
+addcol(){
+cat /dev/null  > tempfilename
+cat /dev/null > tempwithcolon
+    clear
+meta="meta"
+    echo "enter table you want to alter it "
+  read tablename
+
+#######
+firstline=`head -n 1 $tablename`
+######
+
+    echo "Enter Field Name :"
+    read  name
+  
+
+    if [ -f $tablename$meta ]
+    then
+        if cat $tablename$meta | grep $name
+        then
+            echo "Field already exists"
+        else
+                colname=$name
+                echo "Enter col dataType (int/string) :"
+                read  datatype
+
+                if [ $datatype = "int" -o  $datatype = "string" ]
+                then
+                    colname+=":$datatype"
+                else
+                    echo "please enter vaild datatype"
+                fi
+
+                if cat $tablename$meta | grep -v "primary"
+                then
+                    echo "Set as primary key? (y/n) :"
+                    read confirm
+
+                    if [ $confirm = "y" ]
+                    then
+                        colname+=":primary"
+                    fi
+                fi
+
+                echo $colname >> $tablename$meta
+
+		##############################
+		#name
+		
+		echo $firstline
+		echo $firstline$name
+		echo $tablename
+		colonvar=":"
+
+		cat $tablename > tempfilename
+		awk 'NR==1{$0="'$firstline$name'"}1' $tablename > tempfilename
+		cat tempfilename > $tablename
+
+
+		while read line 
+		do
+		echo $line$colonvar >> tempwithcolon
+		done < $tablename
+
+		cat tempwithcolon > $tablename
+		#awk '{$0=$0$colonvar}1' $tablename > tempfilename
+		
+        fi
+    else
+        echo "Table $tablename does no exists "
+        break
+    fi
+}
+
+
+
+#*-------------------
+
+
+ dropcol(){
+meta="meta"
+
+   echo "enter table you want to alter it"
+   read tablename
+
+    echo "Enter Field Name :"
+    read  name
+
+    if [ -f $tablename$meta ]
+    then
+	echo $name
+        if cat $tablename$meta | grep $name
+        then
+	    
+            echo "Delete $name from table? (y/n)"
+            read confirm
+
+            if [ $confirm = "y" ]
+            then
+		######
+		#To validate if primary do not drop
+		while read coltemp
+		do
+		x=$(echo $coltemp|cut -d: -f1)
+		if [ $x == $name ]
+			then
+			echo "jjjjjjjjjjjjjjj"
+			y=$(echo $coltemp|cut -d: -f3)
+			if [ "$y" == "primary" ]
+				then
+				echo "sorry cannot drop primary column"
+				break;
+				else
+				echo $(sed '/'$name'/d' $tablename$meta) > $tablename$meta
+
+				#delete from main table
+				updateRecordDropColumn
+				#end delete
+			fi
+		fi
+
+		done < $tablename$meta
+		#####
+                #echo $(sed '/'$name'/d' $tablename$meta) > $tablename$meta
+            fi
+
+        else
+            echo "Field does not exist"
+        fi
+    else
+        echo "Table $tablename does no exists "
+        break
+fi
+}
+altertable(){
+    clear
+meta="meta"
+    echo "enter table name"
+read tablename
+
+    if [ -f $tablename ]
+    then
+        while true
+        do
+            
+            echo "$tablename Structure:"
+
+            echo "**-*-*-*-*-*-*-*-"
+                i=1
+                for field in `awk -F: '{print $0}' ${tablename$meta}`
+                do
+
+                    colname=$(echo $field | cut -d: -f1)
+                    datatype=$(echo $field | cut -d: -f2)
+                    Primary=$(echo $field | cut -d: -f3)
+
+                    colname="- $i $colname [$dataType]"
+
+                    if [ $Primary ]
+                    then
+                        colname+=" Primary Key"
+                    fi
+
+                    echo $colname
+
+                    ((i=i+1))
+
+                done
+
+            echo "*-*-*-*-*-*-*-*-"
+
+            echo "1. Add A col"
+            echo "2. Drop A col"
+           
+
+            read  line
+
+            case $line in
+                1) addcol $tablename ;;
+                2) dropcol $tablename ;;
+                3) break ;;
+            esac
+        done
+
+    else
+        echo "Table Does Not Exists"
+    fi
+}
+
+
+
+
+
+updateRecordDropColumn(){
+cat /dev/null >te
+
+columnsNamesline=$(head -n1 $tablename) 
+
+
+echo $columnsNamesline| awk -F: '{n=split($line,arr,":");  } END {for (i in arr) print arr[i]} '  >temp2
+
+
+readarray  arrCols < temp2 
+ 
+updateCol=$name
+new=""
+    
+           ii=1
+          
+	    for col in ${arrCols[*]}
+            do
+
+                 if [ $col = $updateCol ]
+                then
+                   updateIndex=$ii;
+		
+		echo the column of update index is;
+		echo $updateIndex;
+                fi
+
+                ii=$((ii+1))
+            done
+
+
+          while read  a
+                  do 
+                        xx=`echo $a | cut -d: -f$updateIndex` 
+ 
+                        echo "${a//$xx/$new}" >> te
+
+                      done < $tablename
+
+    cat te >$tablename
+
+}
+
+
+
+##############################
+
+
+
+
+select choice in createTable alterTable insertRecord updateRecord deleteRecord search displayTable truncateTable dropTable Exit 
+do
+ps3="please Enter your choice"
+ case $choice in 
+createTable)
+echo please enter table name:
+read tablename
+touch ~/DBMS/$tablename
+echo please enter number of columns:
+read colnum
+i=0
+meta="meta"
+while [ $i -lt $(($colnum)) ]
+do
+echo please enter column number $(($i+1)) with datatype space separated:
+read columndetail
+
+colname=$(echo $columndetail | cut -f1 -d" ")
+coltype=$(echo $columndetail | cut -f2 -d" ")
+primary=$(echo $columndetail | cut -f3 -d" ")
+
+ar[$i]=$colname
+artype[$i]=$coltype
+
+
+echo -n ${ar[$i]}:>> ~/DBMS/$tablename
+echo ${ar[$i]}:${artype[$i]}:$primary: >> ~/DBMS/$tablename$meta
+
+i=$(($i+1))
+done
+;;
+#--------------------------
+alterTable)
+
+. ./AlterTable.sh
+
+
+
+
+
+
+
+
+
+
+;;
+#---------------------------------
+insertRecord)
+meta="meta"
+
+echo please enter table name:
+read tablename
+
+#cols=$(awk -F: '{print $0}' $tablename$meta)
+cols=$(awk -F: '{print $0}' $tablename$meta)
+echo "all columns is"
+echo ${cols[*]}
+
+
+echo ------------------------
+colnum=$(cat $tablename$meta|wc -l)
+echo -n "Columns number is:"
+echo  $colnum
+
+echo ------------------------
+
+record=""
+i=0
+flagtoexit="nothing"
+
+for col in $cols 
+	do
+
+	if [ $flagtoexit == "esraa" ]
+	then
+	break;
+	fi
+
+
+
+	colname=$(echo $col|cut -d: -f1)
+	coltype=$(echo $col|cut -d: -f2)
+	primary=$(echo $col|cut -d: -f3)
+	echo "$colname :"
+	read value
+
+	if [ $coltype == "int" ]
+		then
+		echo "true is integer"
+		if echo $value | grep '[A-Za-z]' > /dev/null
+			then
+			echo sorry, the value you entered is incorrect	
+			break;		
+			else
+			record+=$value	
+			record+=:	
+		fi
+	#else
+	#record+=$value
+	fi
+
+	
+
+	if [ $coltype == "string" ]
+		then
+		echo "true is string"
+		if echo $value | grep '[0-9]' > /dev/null
+			then
+			echo sorry, the value you entered is incorrect	
+			break;		
+			else
+			record+=$value	
+			record+=:	
+		fi
+	#else
+	#record+=$value
+	fi
+
+
+
+	if [ -n "${primary}"  ]
+		then
+		if [ -z "${value}" ]
+			then
+			echo sorry, you have to enter a value	
+			break;			
+		else
+			echo to put code of validate unique	
+
+			echo "--------------------------------"
+			
+			  while grep "$value" $tablename >/dev/null 
+			  do 
+
+			  echo sorry, you have to enter a  unique value	
+			  flagtoexit="esraa"
+			  break;			
+			 
+			  done
+			  		 
+
+			echo "--------------------------------"				
+		fi
+	#else
+	#$primary=""
+	fi
+
+
+
+	((i=$i+1))
+echo "ooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+
+
+
+done 
+
+
+
+if [ $i -eq $colnum ]
+	then
+	echo $record >>  $tablename
+fi
+
+
+
+;;
+#---------------------------------
+updateRecord)updateRecord;;
+deleteRecord)deleteRecord;;
+search)search;;
+displayTable)displayTable;;
+truncateTable)truncateTable;;
+dropTable)dropTable;;
+altertable). ./AlterTable.sh;;
+Exit) 
+
+break;;
+esac
+
+done
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            
+
+
+
+
+
+
+
+
+
+
+
+
+      	    
